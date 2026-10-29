@@ -120,14 +120,23 @@ h1 {
 
 .badge {
   position: absolute;
-  right: 8px;
-  bottom: 8px;
+  right: 6px;
+  bottom: 6px;
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: #000a;
+}
+
+.badge svg {
+  width: 16px;
+  height: 16px;
+}
+
+.badge + .badge--location {
+  bottom: 34px;
 }
 
 .empty {
@@ -268,6 +277,10 @@ h1 {
   background: #181818;
 }
 
+.map-view--foreground {
+  z-index: 4;
+}
+
 .map-view__map {
   position: absolute;
   inset: 0;
@@ -282,18 +295,22 @@ h1 {
   background: #0009;
 }
 
-.map-view__route {
-  position: absolute;
+.map-view__toolbar {
   z-index: 1001;
-  bottom: max(30px, env(safe-area-inset-bottom));
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 10px 16px;
-  border: 0;
-  border-radius: 20px;
-  color: #fff;
-  background: #000b;
-  cursor: pointer;
+}
+
+.map-route--hidden {
+  position: relative;
+  color: #aaa;
+}
+
+.map-route--hidden::after {
+  content: '';
+  position: absolute;
+  width: 27px;
+  height: 2px;
+  background: currentColor;
+  transform: rotate(-45deg);
 }
 
 .map-view__message {
@@ -328,6 +345,10 @@ h1 {
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.map-marker--highlighted {
+  background: #d74242;
 }
 
 .map-photos {

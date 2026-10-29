@@ -13,10 +13,14 @@ const fullscreen = document.querySelector('#fullscreen')
 const mapView = document.querySelector('#map-view')
 const mapMessage = document.querySelector('#map-message')
 const mapRouteButton = document.querySelector('#toggle-route')
+const mapToolbar = document.querySelector('#map-toolbar')
+const mediaMapButton = document.querySelector('#media-map')
 const locatedMedia = slideshow.media.map((item, itemIndex) => ({ ...item, index: itemIndex })).filter((item) => item.location)
 let map = null
 let markers = null
 let route = null
+let mapOpenedFromViewer = false
+let highlightedMediaIndex = null
 let index = 0
 let playing = false
 let timer = null
@@ -53,6 +57,12 @@ slideshow.media.forEach((item, itemIndex) => {
     const badge = document.createElement('span')
     badge.className = 'badge'
     badge.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z"/></svg>'
+    button.append(badge)
+  }
+  if (item.location) {
+    const badge = document.createElement('span')
+    badge.className = 'badge badge--location'
+    badge.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.4-7-12a7 7 0 0 1 14 0c0 5.6-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>'
     button.append(badge)
   }
   button.addEventListener('click', () => openViewer(itemIndex))
@@ -131,6 +141,7 @@ function renderMedia() {
   mediaContainer.replaceChildren(track)
   previous.disabled = index === 0
   next.disabled = index === slideshow.media.length - 1
+  mediaMapButton.hidden = !slideshow.media[index].location
   for (const cachedIndex of preloadedImages.keys()) {
     if (Math.abs(cachedIndex - index) > 1) preloadedImages.delete(cachedIndex)
   }
@@ -218,23 +229,31 @@ document.addEventListener('click', (event) => {
   if (!event.target.closest('.settings')) setSettingsOpen(false)
 })
 document.querySelector('#close').addEventListener('click', closeViewer)
-document.querySelector('#open-map').addEventListener('click', openMap)
+document.querySelector('#open-map').addEventListener('click', () => openMap())
+mediaMapButton.addEventListener('click', () => openMap(slideshow.media[index].location))
 document.querySelector('#close-map').addEventListener('click', closeMap)
+document.querySelector('#map-global').addEventListener('click', showAllLocations)
 mapRouteButton.addEventListener('click', () => {
   if (!route) return
   const visible = map.hasLayer(route)
   if (visible) map.removeLayer(route)
   else route.addTo(map)
   mapRouteButton.setAttribute('aria-pressed', String(!visible))
-  mapRouteButton.textContent = visible ? 'Show route' : 'Hide route'
+  mapRouteButton.classList.toggle('map-route--hidden', visible)
+  mapRouteButton.setAttribute('aria-label', visible ? 'Show route' : 'Hide route')
+  mapRouteButton.title = visible ? 'Show route' : 'Hide route'
 })
 
-function openMap() {
+function openMap(location = null) {
+  mapOpenedFromViewer = Boolean(location && !viewer.hidden)
+  highlightedMediaIndex = mapOpenedFromViewer ? index : null
+  if (mapOpenedFromViewer) stopPlaying()
+  mapView.classList.toggle('map-view--foreground', mapOpenedFromViewer)
   mapView.hidden = false
   document.body.style.overflow = 'hidden'
   document.querySelector('#close-map').focus()
   mapMessage.hidden = true
-  mapRouteButton.hidden = true
+  mapToolbar.hidden = true
   if (!locatedMedia.length) {
     mapMessage.textContent = 'No geotagged photos or videos found.'
     mapMessage.hidden = false
@@ -255,17 +274,28 @@ function openMap() {
     markers = L.layerGroup().addTo(map)
     route = L.polyline(locatedMedia.map((item) => item.location), { color: '#6ca9ff', weight: 3 }).addTo(map)
     map.on('zoomend', updateMapMarkers)
-    map.fitBounds(L.latLngBounds(locatedMedia.map((item) => item.location)), { padding: [40, 40], maxZoom: 15 })
+    showAllLocations()
     updateMapMarkers()
   }
-  mapRouteButton.hidden = false
-  requestAnimationFrame(() => map.invalidateSize())
+  mapToolbar.hidden = false
+  requestAnimationFrame(() => {
+    map.invalidateSize()
+    if (location) map.setView(location, 15)
+    updateMapMarkers()
+  })
 }
 
 function closeMap() {
   mapView.hidden = true
-  document.body.style.overflow = ''
-  document.querySelector('#open-map').focus()
+  mapView.classList.remove('map-view--foreground')
+  document.body.style.overflow = viewer.hidden ? '' : 'hidden'
+  if (mapOpenedFromViewer && !viewer.hidden) mediaMapButton.focus()
+  else document.querySelector('#open-map').focus()
+  mapOpenedFromViewer = false
+}
+
+function showAllLocations() {
+  if (map && locatedMedia.length) map.fitBounds(L.latLngBounds(locatedMedia.map((item) => item.location)), { padding: [40, 40], maxZoom: 15 })
 }
 
 function updateMapMarkers() {
@@ -281,7 +311,8 @@ function updateMapMarkers() {
     const position = [items.reduce((sum, item) => sum + item.location[0], 0) / items.length, items.reduce((sum, item) => sum + item.location[1], 0) / items.length]
     const markerContent = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8" cy="9" r="1.5"/><path d="M4 17l5-5 3 3 3-3 5 5"/></svg>' + (items.length > 1 ? `<span>${items.length}</span>` : '')
     const markerWidth = items.length > 1 ? Math.max(48, 34 + String(items.length).length * 8) : 36
-    const icon = L.divIcon({ className: 'map-marker', html: markerContent, iconSize: [markerWidth, 36], iconAnchor: [markerWidth / 2, 18] })
+    const markerClass = items.some((item) => item.index === highlightedMediaIndex) ? 'map-marker map-marker--highlighted' : 'map-marker'
+    const icon = L.divIcon({ className: markerClass, html: markerContent, iconSize: [markerWidth, 36], iconAnchor: [markerWidth / 2, 18] })
     const popup = document.createElement('div')
     popup.className = 'map-photos'
     for (const item of items) {
@@ -293,7 +324,11 @@ function updateMapMarkers() {
       image.alt = item.name
       image.loading = 'lazy'
       button.append(image)
-      button.addEventListener('click', () => openViewer(item.index))
+      button.addEventListener('click', () => {
+        mapView.classList.remove('map-view--foreground')
+        mapOpenedFromViewer = false
+        openViewer(item.index)
+      })
       popup.append(button)
     }
     L.marker(position, { icon, title: `${items.length} ${items.length === 1 ? 'media item' : 'media items'}` }).bindPopup(popup, { maxWidth: 300 }).addTo(markers)
@@ -314,8 +349,11 @@ document.addEventListener('fullscreenchange', () => {
     : '<svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>'
 })
 document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !mapView.hidden && (viewer.hidden || mapOpenedFromViewer)) {
+    closeMap()
+    return
+  }
   if (viewer.hidden) {
-    if (event.key === 'Escape' && !mapView.hidden) closeMap()
     return
   }
   if (event.key === 'Escape' && !settingsMenu.hidden) { setSettingsOpen(false); settings.focus() }
