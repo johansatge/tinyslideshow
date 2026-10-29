@@ -5,6 +5,6 @@
   "type": "module",
   "bin": { "tinyslideshow": "src/cli.js" },
   "engines": { "node": ">=22" },
-  "files": ["src", "readme.md"],
+  "files": ["src", "readme.md", "license.md"],
   "license": "MIT"
 }

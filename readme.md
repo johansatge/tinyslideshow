@@ -25,3 +25,7 @@ The application generates cached JPEG thumbnails with FFmpeg in the `tinyslidesh
 JPEG, PNG, WebP, GIF, MP4 and WebM files in the selected folder are sorted by name. Playback depends on browser support for the media codecs. Use the arrow keys to navigate, Space to play or pause, and Escape to close the viewer. Swipe or drag horizontally to navigate. The slideshow stops at the last item; videos play muted until they end when automatic playback is active.
 
 Pinch or double-tap a photo to zoom; on desktop, double-click to zoom. Drag a zoomed photo to explore it. Zooming pauses the slideshow, and returning to the original size restores swipe navigation.
+
+## License
+
+This project is released under the [MIT License](license.md).
