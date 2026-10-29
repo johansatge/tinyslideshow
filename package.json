@@ -1,0 +1,10 @@
+{
+  "name": "tinyslideshow",
+  "version": "1.0.0",
+  "description": "A simple local photo and video slideshow",
+  "type": "module",
+  "bin": { "tinyslideshow": "src/cli.js" },
+  "engines": { "node": ">=22" },
+  "files": ["src", "readme.md"],
+  "license": "MIT"
+}
