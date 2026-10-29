@@ -10,6 +10,13 @@ const interval = document.querySelector('#interval')
 const settings = document.querySelector('#settings')
 const settingsMenu = document.querySelector('#settings-menu')
 const fullscreen = document.querySelector('#fullscreen')
+const mapView = document.querySelector('#map-view')
+const mapMessage = document.querySelector('#map-message')
+const mapRouteButton = document.querySelector('#toggle-route')
+const locatedMedia = slideshow.media.map((item, itemIndex) => ({ ...item, index: itemIndex })).filter((item) => item.location)
+let map = null
+let markers = null
+let route = null
 let index = 0
 let playing = false
 let timer = null
@@ -188,7 +195,7 @@ function closeViewer() {
   clearTimeout(clickTimer)
   lastTap = null
   viewer.hidden = true
-  document.body.style.overflow = ''
+  document.body.style.overflow = mapView.hidden ? '' : 'hidden'
   if (lastFocus) lastFocus.focus()
 }
 
@@ -211,6 +218,87 @@ document.addEventListener('click', (event) => {
   if (!event.target.closest('.settings')) setSettingsOpen(false)
 })
 document.querySelector('#close').addEventListener('click', closeViewer)
+document.querySelector('#open-map').addEventListener('click', openMap)
+document.querySelector('#close-map').addEventListener('click', closeMap)
+mapRouteButton.addEventListener('click', () => {
+  if (!route) return
+  const visible = map.hasLayer(route)
+  if (visible) map.removeLayer(route)
+  else route.addTo(map)
+  mapRouteButton.setAttribute('aria-pressed', String(!visible))
+  mapRouteButton.textContent = visible ? 'Show route' : 'Hide route'
+})
+
+function openMap() {
+  mapView.hidden = false
+  document.body.style.overflow = 'hidden'
+  document.querySelector('#close-map').focus()
+  mapMessage.hidden = true
+  mapRouteButton.hidden = true
+  if (!locatedMedia.length) {
+    mapMessage.textContent = 'No geotagged photos or videos found.'
+    mapMessage.hidden = false
+    return
+  }
+  if (typeof L === 'undefined') {
+    mapMessage.textContent = 'The map could not be loaded. Check your internet connection.'
+    mapMessage.hidden = false
+    return
+  }
+  if (!map) {
+    map = L.map('map', { zoomControl: false })
+    L.control.zoom({ position: 'topleft' }).addTo(map)
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map)
+    markers = L.layerGroup().addTo(map)
+    route = L.polyline(locatedMedia.map((item) => item.location), { color: '#6ca9ff', weight: 3 }).addTo(map)
+    map.on('zoomend', updateMapMarkers)
+    map.fitBounds(L.latLngBounds(locatedMedia.map((item) => item.location)), { padding: [40, 40], maxZoom: 15 })
+    updateMapMarkers()
+  }
+  mapRouteButton.hidden = false
+  requestAnimationFrame(() => map.invalidateSize())
+}
+
+function closeMap() {
+  mapView.hidden = true
+  document.body.style.overflow = ''
+  document.querySelector('#open-map').focus()
+}
+
+function updateMapMarkers() {
+  markers.clearLayers()
+  const groups = new Map()
+  for (const item of locatedMedia) {
+    const point = map.project(item.location, map.getZoom())
+    const key = `${Math.round(point.x / 70)},${Math.round(point.y / 70)}`
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key).push(item)
+  }
+  for (const items of groups.values()) {
+    const position = [items.reduce((sum, item) => sum + item.location[0], 0) / items.length, items.reduce((sum, item) => sum + item.location[1], 0) / items.length]
+    const markerContent = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8" cy="9" r="1.5"/><path d="M4 17l5-5 3 3 3-3 5 5"/></svg>' + (items.length > 1 ? `<span>${items.length}</span>` : '')
+    const markerWidth = items.length > 1 ? Math.max(48, 34 + String(items.length).length * 8) : 36
+    const icon = L.divIcon({ className: 'map-marker', html: markerContent, iconSize: [markerWidth, 36], iconAnchor: [markerWidth / 2, 18] })
+    const popup = document.createElement('div')
+    popup.className = 'map-photos'
+    for (const item of items) {
+      const button = document.createElement('button')
+      button.className = 'map-photos__item'
+      button.setAttribute('aria-label', `Open ${item.name}`)
+      const image = document.createElement('img')
+      image.src = item.thumbnail || (!item.video ? item.url : '')
+      image.alt = item.name
+      image.loading = 'lazy'
+      button.append(image)
+      button.addEventListener('click', () => openViewer(item.index))
+      popup.append(button)
+    }
+    L.marker(position, { icon, title: `${items.length} ${items.length === 1 ? 'media item' : 'media items'}` }).bindPopup(popup, { maxWidth: 300 }).addTo(markers)
+  }
+}
 fullscreen.addEventListener('click', async () => {
   try {
     if (document.fullscreenElement) await document.exitFullscreen()
@@ -226,7 +314,10 @@ document.addEventListener('fullscreenchange', () => {
     : '<svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>'
 })
 document.addEventListener('keydown', (event) => {
-  if (viewer.hidden) return
+  if (viewer.hidden) {
+    if (event.key === 'Escape' && !mapView.hidden) closeMap()
+    return
+  }
   if (event.key === 'Escape' && !settingsMenu.hidden) { setSettingsOpen(false); settings.focus() }
   else if (event.key === 'Escape') closeViewer()
   else if (event.target.tagName !== 'SELECT') {

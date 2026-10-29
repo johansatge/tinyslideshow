@@ -5,14 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#111111">
   <title>Tiny Slideshow</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <style>{{ css }}</style>
 </head>
 <body>
   <header class="header">
     <div class="header__title"><h1 id="folder"></h1><span id="count"></span></div>
-    <button class="icon-button" id="fullscreen" aria-label="Toggle fullscreen" title="Toggle fullscreen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
+    <div class="header__actions">
+      <button class="icon-button" id="open-map" aria-label="Open map" title="Open map"><svg viewBox="0 0 24 24"><path d="M9 18l-6 3V6l6-3 6 3 6-3v15l-6 3-6-3zM9 3v15M15 6v15"/></svg></button>
+      <button class="icon-button" id="fullscreen" aria-label="Toggle fullscreen" title="Toggle fullscreen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
+    </div>
   </header>
   <main><div class="grid" id="grid"></div><p class="empty" id="empty" hidden>No photos or videos found.</p></main>
+  <div class="map-view" id="map-view" hidden role="dialog" aria-modal="true" aria-label="Photo map">
+    <div id="map" class="map-view__map"></div>
+    <p class="map-view__message" id="map-message" hidden></p>
+    <button class="icon-button map-view__close" id="close-map" aria-label="Close map"><svg viewBox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19"/></svg></button>
+    <button class="map-view__route" id="toggle-route" aria-pressed="true">Hide route</button>
+  </div>
   <div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="Slideshow">
     <button class="icon-button viewer__close" id="close" aria-label="Close slideshow"><svg viewBox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19"/></svg></button>
     <div class="viewer__media" id="media"></div>
@@ -37,6 +47,7 @@
     </div>
   </div>
   <script>const slideshow = {{ data }};</script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script>{{ js }}</script>
 </body>
 </html>

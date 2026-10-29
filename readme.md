@@ -6,6 +6,7 @@ A local photo and video slideshow for desktop and mobile browsers.
 
 - Node.js 22 or newer
 - [FFmpeg](https://ffmpeg.org/download.html), installed and available as `ffmpeg` in `PATH`. The application exits if FFmpeg is unavailable.
+- [ExifTool](https://exiftool.org/), installed and available as `exiftool` in `PATH`, to read GPS metadata. The application exits if ExifTool is unavailable.
 
 Install the command from this directory with `npm install --global .`.
 
@@ -25,6 +26,12 @@ The application generates cached JPEG thumbnails with FFmpeg in the `tinyslidesh
 JPEG, PNG, WebP, GIF, MP4 and WebM files in the selected folder are sorted by name. Playback depends on browser support for the media codecs. Use the arrow keys to navigate, Space to play or pause, and Escape to close the viewer. Swipe or drag horizontally to navigate. The slideshow stops at the last item; videos play muted until they end when automatic playback is active.
 
 Pinch or double-tap a photo to zoom; on desktop, double-click to zoom. Drag a zoomed photo to explore it. Zooming pauses the slideshow, and returning to the original size restores swipe navigation.
+
+## Map
+
+The map shows geotagged media, groups nearby locations and draws a line between them in filename order. Select a marker and a thumbnail to open the slideshow; the route can be hidden. The line connects locations directly and does not represent the actual route traveled.
+
+The map requires an internet connection: Leaflet is loaded from a CDN and map tiles from OpenStreetMap. Tile requests reveal the viewed map areas to the tile provider. OpenStreetMap's tile service requires a valid HTTP Referer, which may not be supplied when opening the static page with `file://`; in that case the map tiles may not load. Offline tile downloads are not supported.
 
 ## License
 

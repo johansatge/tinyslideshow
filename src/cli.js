@@ -4,7 +4,7 @@ import { promises as fsp } from 'fs'
 import path from 'path'
 import { createInterface } from 'readline/promises'
 import { stdin, stdout } from 'process'
-import { checkFfmpeg } from './media.js'
+import { checkFfmpeg, checkExiftool } from './media.js'
 import { renderPage } from './render.js'
 import { createServer } from './server.js'
 
@@ -27,6 +27,7 @@ async function main() {
   const basePath = await fsp.realpath(path.resolve(positional[0] || '.'))
   if (!(await fsp.stat(basePath)).isDirectory()) throw new Error('The path must be a directory')
   await checkFfmpeg()
+  await checkExiftool()
   if (staticMode) {
     const outputPath = path.join(basePath, 'tinyslideshow.html')
     let exists = false

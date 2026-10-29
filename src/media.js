@@ -8,13 +8,21 @@ const execFileAsync = promisify(execFile)
 const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
 const videoExtensions = ['.mp4', '.webm']
 
-export { checkFfmpeg, getMedia }
+export { checkFfmpeg, checkExiftool, getMedia }
 
 async function checkFfmpeg() {
   try {
     await execFileAsync('ffmpeg', ['-version'])
   } catch(error) {
     throw new Error('FFmpeg is required and must be available in PATH')
+  }
+}
+
+async function checkExiftool() {
+  try {
+    await execFileAsync('exiftool', ['-ver'])
+  } catch(error) {
+    throw new Error('ExifTool is required and must be available in PATH')
   }
 }
 
@@ -25,6 +33,15 @@ async function getMedia(basePath) {
     .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }))
   const videoCount = files.filter((file) => videoExtensions.includes(path.extname(file.name).toLowerCase())).length
   console.log(`Found ${files.length - videoCount} photos and ${videoCount} videos`)
+  const locations = new Map()
+  if (files.length) {
+    const { stdout } = await execFileAsync('exiftool', ['-json', '-n', '-GPSLatitude', '-GPSLongitude', '-fileName', '-Directory', basePath], { maxBuffer: 20 * 1024 * 1024 })
+    for (const item of JSON.parse(stdout)) {
+      if (Number.isFinite(item.GPSLatitude) && Number.isFinite(item.GPSLongitude) && Math.abs(item.GPSLatitude) <= 90 && Math.abs(item.GPSLongitude) <= 180) {
+        locations.set(item.FileName, [item.GPSLatitude, item.GPSLongitude])
+      }
+    }
+  }
   const cachePath = path.join(basePath, 'tinyslideshow')
   await fsp.mkdir(cachePath, { recursive: true })
   const existingThumbnails = await fsp.readdir(cachePath, { withFileTypes: true })
@@ -74,7 +91,7 @@ async function getMedia(basePath) {
       await fsp.access(thumbnailPath)
       thumbnailUrl = `tinyslideshow/${thumbnail}`
     } catch(error) {}
-    media.push({ name: file.name, url: encodeURIComponent(file.name), thumbnail: thumbnailUrl, video })
+    media.push({ name: file.name, url: encodeURIComponent(file.name), thumbnail: thumbnailUrl, video, location: locations.get(file.name) || null })
   }
   for (const thumbnail of existingThumbnails) {
     if (thumbnail.isFile() && /^[a-f0-9]{64}\.jpg$/.test(thumbnail.name) && !currentThumbnails.has(thumbnail.name)) {
