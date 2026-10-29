@@ -21,6 +21,31 @@ The default folder is the current directory and the default port is `9080`. The 
 
 Static mode creates `tinyslideshow.html` in the chosen folder. Copy this file, the `tinyslideshow` directory and the media files together, preserving their relative locations. Opening local HTML and media files depends on the browser and file manager; some mobile browsers may restrict access to neighboring files. Generate the page again after changing the media. Existing HTML requires confirmation, or `--overwrite` for non-interactive use.
 
+### Opening a static slideshow on Android with Termux
+
+1. Install Termux from the Play Store and open it.
+2. Install Node.js and [httpdir](https://github.com/johansatge/httpdir):
+
+   ```bash
+   pkg install nodejs
+   npm install -g httpdir
+   ```
+
+3. Grant Termux access to shared storage:
+
+   ```bash
+   termux-setup-storage
+   ```
+
+4. Navigate to the folder containing `tinyslideshow.html`, the media files and the `tinyslideshow` directory, then start the server:
+
+   ```bash
+   cd /storage/emulated/0/path/to/tinyslideshow
+   httpdir
+   ```
+
+5. Open [http://localhost:8080/tinyslideshow.html](http://localhost:8080/tinyslideshow.html) in your Android browser. Leave Termux running while using the slideshow.
+
 The application generates cached JPEG thumbnails with FFmpeg in the `tinyslideshow` directory. It reuses them until the source file changes and removes obsolete cached thumbnails when the media list is refreshed. If an individual thumbnail cannot be generated, the original image or a video icon is used instead.
 
 JPEG, PNG, WebP, GIF, MP4 and WebM files in the selected folder are sorted by name. Playback depends on browser support for the media codecs. Use the arrow keys to navigate, Space to play or pause, and Escape to close the viewer. Swipe or drag horizontally to navigate. The slideshow stops at the last item; videos play muted until they end when automatic playback is active.
