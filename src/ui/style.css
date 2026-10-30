@@ -145,6 +145,17 @@ h1 {
   margin: 80px 20px;
 }
 
+.footer {
+  padding: 30px 20px;
+  color: #888;
+  font-size: 12px;
+  text-align: center;
+}
+
+.footer span {
+  color: #d96a78;
+}
+
 .viewer {
   position: fixed;
   inset: 0;

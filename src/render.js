@@ -6,14 +6,14 @@ export { renderPage }
 
 async function renderPage(basePath) {
   const startedAt = performance.now()
-  const [html, css, js, media] = await Promise.all([
+  const [html, css, scripts, media] = await Promise.all([
     fsp.readFile(path.join(import.meta.dirname, 'ui/index.html'), 'utf8'),
     fsp.readFile(path.join(import.meta.dirname, 'ui/style.css'), 'utf8'),
-    fsp.readFile(path.join(import.meta.dirname, 'ui/app.js'), 'utf8'),
+    Promise.all(['app.js', 'grid.js', 'viewer.js', 'map.js', 'controls.js', 'gestures.js'].map((file) => fsp.readFile(path.join(import.meta.dirname, 'ui/js', file), 'utf8'))),
     getMedia(basePath),
   ])
   const data = JSON.stringify({ name: path.basename(basePath), media }).replace(/</g, '\\u003c')
-  const page = html.replace('{{ css }}', () => css).replace('{{ data }}', () => data).replace('{{ js }}', () => js)
+  const page = html.replace('{{ css }}', () => css).replace('{{ data }}', () => data).replace('{{ js }}', () => scripts.join('\n'))
   console.log(`Page rendering total: ${Math.round(performance.now() - startedAt)} ms`)
   return page
 }
