@@ -6,6 +6,8 @@ A local photo and video slideshow for desktop and mobile browsers, with:
 - Automatic mode with configurable delay
 - Map view for geolocated media
 
+---
+
 - [Requirements](#requirements)
 - [Usage](#usage)
   - [Running the tool](#running-the-tool)
