@@ -48,6 +48,8 @@ Static mode creates `tinyslideshow.html` in the chosen folder. Copy this file, t
 
 The application generates cached JPEG thumbnails with FFmpeg in the `tinyslideshow` directory. It reuses them until the source file changes and removes obsolete cached thumbnails when the media list is refreshed. If an individual thumbnail cannot be generated, the original image or a video icon is used instead.
 
+GPS metadata is cached in `tinyslideshow/gps.json`, including files without coordinates. Only new or changed files are read again with ExifTool; deleted files are removed from the cache. The cache persists between server runs and static page generations.
+
 JPEG, PNG, WebP, GIF, MP4 and WebM files in the selected folder are sorted by name. Playback depends on browser support for the media codecs. Use the arrow keys to navigate, Space to play or pause, and Escape to close the viewer. Swipe or drag horizontally to navigate. The slideshow stops at the last item; videos play muted until they end when automatic playback is active.
 
 Pinch or double-tap a photo to zoom; on desktop, double-click to zoom. Drag a zoomed photo to explore it. Zooming pauses the slideshow, and returning to the original size restores swipe navigation.
