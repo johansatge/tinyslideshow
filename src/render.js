@@ -9,7 +9,7 @@ async function renderPage(basePath) {
   const [html, css, scripts, media] = await Promise.all([
     fsp.readFile(path.join(import.meta.dirname, 'ui/index.html'), 'utf8'),
     fsp.readFile(path.join(import.meta.dirname, 'ui/style.css'), 'utf8'),
-    Promise.all(['app.js', 'grid.js', 'viewer.js', 'map.js', 'controls.js', 'gestures.js'].map((file) => fsp.readFile(path.join(import.meta.dirname, 'ui/js', file), 'utf8'))),
+    Promise.all(['grid.js', 'viewer.js', 'map.js', 'controls.js', 'gestures.js', 'app.js'].map((file) => fsp.readFile(path.join(import.meta.dirname, 'ui/js', file), 'utf8'))),
     getMedia(basePath),
   ])
   const data = JSON.stringify({ name: path.basename(basePath), media }).replace(/</g, '\\u003c')
