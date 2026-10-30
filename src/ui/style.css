@@ -351,6 +351,17 @@ h1 {
   background: #d74242;
 }
 
+.map-route-arrow svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: #6ca9ff;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 1px white);
+}
+
 .map-photos {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -272,10 +272,11 @@ function openMap(location = null) {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map)
     markers = L.layerGroup().addTo(map)
-    route = L.polyline(locatedMedia.map((item) => item.location), { color: '#6ca9ff', weight: 3 }).addTo(map)
-    map.on('zoomend', updateMapMarkers)
+    route = L.layerGroup().addTo(map)
+    map.on('zoomend', () => { updateMapMarkers(); updateMapRoute() })
     showAllLocations()
     updateMapMarkers()
+    updateMapRoute()
   }
   mapToolbar.hidden = false
   requestAnimationFrame(() => {
@@ -296,6 +297,33 @@ function closeMap() {
 
 function showAllLocations() {
   if (map && locatedMedia.length) map.fitBounds(L.latLngBounds(locatedMedia.map((item) => item.location)), { padding: [40, 40], maxZoom: 15 })
+}
+
+function updateMapRoute() {
+  route.clearLayers()
+  const zoom = map.getZoom()
+  for (let i = 1; i < locatedMedia.length; i++) {
+    L.polyline([locatedMedia[i - 1].location, locatedMedia[i].location], { color: '#6ca9ff', weight: 3 }).addTo(route)
+    const start = map.project(locatedMedia[i - 1].location, zoom)
+    const end = map.project(locatedMedia[i].location, zoom)
+    const dx = end.x - start.x
+    const dy = end.y - start.y
+    const distance = Math.hypot(dx, dy)
+    if (distance < 24) continue
+    const count = Math.min(20, Math.max(1, Math.floor(distance / 100)))
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI
+    for (let j = 1; j <= count; j++) {
+      const fraction = j / (count + 1)
+      const position = map.unproject([start.x + dx * fraction, start.y + dy * fraction], zoom)
+      const icon = L.divIcon({
+        className: 'map-route-arrow',
+        html: `<svg viewBox="0 0 16 16" style="transform: rotate(${angle}deg)" aria-hidden="true"><path d="M5 3l5 5-5 5"/></svg>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+      })
+      L.marker(position, { icon, interactive: false, keyboard: false }).addTo(route)
+    }
+  }
 }
 
 function updateMapMarkers() {
